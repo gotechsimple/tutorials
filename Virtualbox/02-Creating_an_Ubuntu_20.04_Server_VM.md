@@ -94,4 +94,49 @@ $ ssh -p 2200 test@127.0.0.1
 
 ### Enabling a Shared Folder
 
+A shared folder allows you to map a directory on your VM to a directory on your host system.  This gives you another method of copying files to/from each system.  To enable a shared folder on your VM, do the following:
 
+1. Make sure the VM is started and the VM's UI is accessible.
+
+2. Select **Devices > Insert Guest Additions CD Image**.  This will make the Guest Additions ISO available to the VM.
+
+3. Log into the VM (either via the VM's UI or via SSH from the host system).
+
+4. Run the following on the VM to install necessary packages, mount the ISO, build the Virtualbox drivers, and reboot the VM:
+```bash
+$ sudo apt-get update
+$ sudo apt install build-essential dkms linux-headers-$(uname -r)
+$ sudo mount /dev/cdrom /media
+$ cd /media
+$ sudo sh ./VBoxLinuxAdditions.run --nox11
+$ sudo shutdown -r now
+```
+
+5. Once the VM has finished rebooting, click **Settings**
+
+6. Click **Shared Folders**
+
+7. Click the green "+" to add a new shared folder.  For the new shared folder, enter the following:
+   * Path: (enter a path on your **host** system where you want the shared folder to map)
+   * Name: shared
+
+8. Login to the VM (either using the VM's UI or via SSH from the host).
+
+9. Run the following on the VM to
+```bash
+$ sudo mkdir /shared
+$ sudo chmod 755 /shared
+$ sudo chown test:test /shared
+```
+
+10. Add an entry to the filesystem table file so the shared folder is automatically mounted during boot:
+```bash
+$ echo "shared /shared vboxsf uid=1000,gid=1000,_netdev 0 0" | sudo tee -a /etc/fstab
+```
+
+The *uid=1000,gid=1000* will allow the *test* user access to the host's mapped folder.  During a clean installation of Ubuntu 20.04 server, each of these values should be 1000.  You can verify by issuing the following command:
+```bash
+$ grep test /etc/passwd
+```
+
+The shared folder should now be set up and working.  You can verify by creating a file in the */shared* directory on the VM and then checking the file exists from the host (and vice-versa).
